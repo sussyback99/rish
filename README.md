@@ -1,4 +1,4 @@
-![Логотип rish](rishLogo.png)
+![Логотип rish](assets/rishLogo.png)
 
 ---
 
