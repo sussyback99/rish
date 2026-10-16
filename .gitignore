@@ -2,3 +2,6 @@
 rish
 .directory
 .key
+*.o
+*.a
+*.so
