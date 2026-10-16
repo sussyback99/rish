@@ -34,6 +34,7 @@
 ```bash
 g++ -std=c++20 -Wall -Wextra -O2 -s rish.cpp -o rish
 ```
+[Сам Файл](https://github.com/sussyback99/rish/blob/main/rish.cpp)
 
 ---
 
