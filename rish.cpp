@@ -1,4 +1,4 @@
-#include "headersh.hpp"
+#include ".assets/headersh.hpp"
 
 vector<string> history;
 string histFile = string(getenv("HOME") ? getenv("HOME") : ".") + "/.rish_history";
