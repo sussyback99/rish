@@ -3,6 +3,29 @@
 vector<string> history;
 string histFile = string(getenv("HOME") ? getenv("HOME") : ".") + "/.rish_history";
 
+struct ParsedCommand {
+    string name;
+    vector<string> args;
+    vector<string> flags;
+};
+
+ParsedCommand parseLine(const string& line) {
+    ParsedCommand cmd;
+    stringstream ss(line);
+    string token;
+
+    if (ss >> cmd.name) {
+        while (ss >> token) {
+            if (!token.empty() && token[0] == '@') {
+                cmd.flags.push_back(token.substr(1));
+            } else {
+                cmd.args.push_back(token);
+            }
+        }
+    }
+    return cmd;
+}
+
 void loadHistory() {
     ifstream f(histFile);
     string line;
@@ -125,6 +148,16 @@ string input() {
     return line;
 }
 
+void getCwd() {
+    char temp[1024];
+    if (getcwd(temp, sizeof(temp)) != nullptr) {
+        printf("%s\n", temp);
+    }
+    else {
+        fprintf(stderr, "rish FSError! Unknown cwd!\n");
+    }
+}
+
 int main() {
     loadHistory();
 
@@ -133,20 +166,64 @@ int main() {
         fflush(stdout);
 
         string line = input();
-
         if (line.empty()) continue;
 
         history.push_back(line);
 
-        if (line == "exit") {
+        ParsedCommand cmd = parseLine(line);
+
+        if (cmd.name == "exit") {
             break;
-        } else if (line.starts_with("cd ")) {
-            string dir = line.substr(3);
-            if (dir == "~") dir = getenv("HOME");
-            chdir(dir.c_str());
-            continue;
-        } else {
-            system(line.c_str());
+        }
+        else if (cmd.name == "cd") {
+            if (!cmd.args.empty()) {
+                string dir = cmd.args[0];
+                if (dir == "~" && getenv("HOME")) {
+                    dir = getenv("HOME");
+                }
+                if (chdir(dir.c_str()) != 0) {
+                    perror("rish: cd error");
+                }
+            } else {
+                if (getenv("HOME")) chdir(getenv("HOME"));
+            }
+        }
+        else if (cmd.name == "print") {
+            bool isCwd = false;
+            string Newline = "\n";
+            string text = "";
+
+            for (const auto& f : cmd.flags) {
+                if (f == "cwd") isCwd = true;
+                else if (f == "n" || f == "nonewline") Newline = "";
+            }
+
+            for (size_t i = 0; i < cmd.args.size(); ++i) {
+                if (i > 0) text += " ";
+                text += cmd.args[i];
+            }
+
+            if (isCwd) {
+                getCwd();
+            } else {
+                printf("%s%s", text.c_str(), Newline.c_str());
+            }
+        }
+        else if (cmd.name == "who") {
+            bool myuid = false;
+            for (const auto& f : cmd.flags) {
+                if (f == "myuid") myuid = true;
+            }
+            if (myuid) {
+                printf("%d\n", getuid());
+            }
+            else {
+                fprintf(stderr, "who: unknown arguments");
+            }
+        }
+        
+        else {
+            printf("rish: %s: Unknown Command\n", cmd.name.c_str());
         }
     }
 
